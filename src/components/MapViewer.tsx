@@ -78,6 +78,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
     estacionamiento: true,
     parque: true,
     deposito: true,
+    acceso: true,
     otro: true,
   })
 

@@ -14,6 +14,7 @@ const NOMBRES_TIPO: Record<ZonaTipo, string> = {
   estacionamiento: 'Estacionamiento',
   parque: 'Parque',
   deposito: 'Depósitos',
+  acceso: 'Accesos',
   otro: 'Otros',
 }
 

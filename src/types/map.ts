@@ -4,7 +4,7 @@ export type EventoTipo =
 
 export type ZonaTipo =
   | 'pabellon' | 'salon' | 'area_servicios'
-  | 'estacionamiento' | 'parque' | 'deposito' | 'otro'
+  | 'estacionamiento' | 'parque' | 'deposito' | 'acceso' | 'otro'
 
 export interface Evento {
   id: string
@@ -78,6 +78,7 @@ export const ZONA_COLORES: Record<ZonaTipo, { fill: string; stroke: string }> = 
   estacionamiento: { fill: '#F2EFE9', stroke: '#8C7A5B' }, // bronce neutro
   parque:          { fill: '#EEF3E3', stroke: '#6B8E4E' }, // verde oliva
   deposito:        { fill: '#F7F0E1', stroke: '#A66A2E' }, // terracota
+  acceso:          { fill: '#FBEAEA', stroke: '#B3261E' }, // rojo de alerta (portones/accesos)
   otro:            { fill: '#F7F4EC', stroke: '#6B6457' }, // crema / gris cálido
 }
 
@@ -89,16 +90,16 @@ export const ZONA_ICONOS: Record<ZonaTipo, string> = {
   estacionamiento: '🅿️',
   parque: '🌳',
   deposito: '📦',
+  acceso: '🚪',
   otro: '📍',
 }
 
-// Helpers con fallback seguro para tipos fuera del enum (ej. "acceso", datos legados)
+// Helpers con fallback seguro para tipos fuera del enum (datos legados con tipos desconocidos)
 export function getColorZona(tipo: string): { fill: string; stroke: string } {
   return ZONA_COLORES[tipo as ZonaTipo] ?? ZONA_COLORES.otro
 }
 
 export function getIconoZona(tipo: string): string {
-  if (tipo === 'acceso') return '🚪'
   return ZONA_ICONOS[tipo as ZonaTipo] ?? ZONA_ICONOS.otro
 }
 
@@ -107,11 +108,7 @@ export function getIconoZona(tipo: string): string {
 // este devuelve la clave de la imagen ya registrada vía map.addImage (necesario porque
 // MapLibre renderiza text-field con fuentes SDF sin color, no con emoji reales).
 export function getIconoIdZona(tipo: string): string {
-  if (tipo === 'acceso') return 'acceso'
   return (tipo as ZonaTipo) in ZONA_ICONOS ? tipo : 'otro'
 }
 
-export const TODOS_LOS_ICONOS: Record<string, string> = {
-  ...ZONA_ICONOS,
-  acceso: '🚪',
-}
+export const TODOS_LOS_ICONOS: Record<string, string> = { ...ZONA_ICONOS }
