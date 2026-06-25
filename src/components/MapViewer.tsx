@@ -220,6 +220,15 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
         'icon-allow-overlap': true,
       },
     })
+  }, [zonas, mapLoaded])
+
+  // ── Click en zona → abrir panel de info ───────────────────────────────
+  // Efecto separado del anterior: así el handler siempre cierra sobre el
+  // `zonas` actual. Si viviera en el mismo efecto que crea las layers (que
+  // solo corre una vez), quedaría con una referencia vieja/vacía a `zonas`.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !mapLoaded) return
 
     const onClickZona = (e: maplibregl.MapLayerMouseEvent) => {
       const feature = e.features?.[0]
@@ -256,6 +265,15 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
     map.on('mouseleave', 'zonas-fill', onLeave)
     map.on('mouseenter', 'zonas-point', onEnter)
     map.on('mouseleave', 'zonas-point', onLeave)
+
+    return () => {
+      map.off('click', 'zonas-fill', onClickZona)
+      map.off('click', 'zonas-point', onClickZona)
+      map.off('mouseenter', 'zonas-fill', onEnter)
+      map.off('mouseleave', 'zonas-fill', onLeave)
+      map.off('mouseenter', 'zonas-point', onEnter)
+      map.off('mouseleave', 'zonas-point', onLeave)
+    }
   }, [zonas, mapLoaded])
 
   useEffect(() => {
