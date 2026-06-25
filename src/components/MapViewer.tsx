@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import type { Evento, Zona } from '../types/map'
-import { getColorZona, getIconoZona } from '../types/map'
+import { getColorZona, getIconoZona, getIconoIdZona, TODOS_LOS_ICONOS } from '../types/map'
+import { registrarIconoZona } from '../lib/iconos'
 import MapLeyenda from './MapLeyenda'
 
 interface MapViewerProps {
@@ -50,7 +51,7 @@ function zonasToGeoJSON(zonas: Zona[]): GeoJSON.FeatureCollection {
         slug: zona.slug,
         nombre: zona.nombre,
         tipo: zona.tipo,
-        icono: getIconoZona(zona.tipo),
+        icono: getIconoIdZona(zona.tipo),
         color_fill: zona.color_fill ?? colores.fill,
         color_stroke: zona.color_stroke ?? colores.stroke,
       },
@@ -109,6 +110,10 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
     }
 
     map.on('load', () => {
+      Object.entries(TODOS_LOS_ICONOS).forEach(([id, emoji]) => {
+        registrarIconoZona(map, id, emoji)
+      })
+
       const planoImagenUrl = evento.metadata?.plano_imagen_url
       const corners = evento.metadata?.imagen_corners
 
@@ -211,9 +216,13 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
       source: 'zonas-source',
       filter: ['==', ['geometry-type'], 'Polygon'],
       layout: {
-        'text-field': ['concat', ['get', 'icono'], '  ', ['get', 'nombre']],
+        'icon-image': ['get', 'icono'],
+        'icon-size': 0.4,
+        'icon-anchor': 'bottom',
+        'text-field': ['get', 'nombre'],
         'text-size': 11,
-        'text-anchor': 'center',
+        'text-anchor': 'top',
+        'text-offset': [0, 0.2],
       },
       paint: {
         'text-color': '#16382B',
@@ -241,9 +250,9 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
       source: 'zonas-source',
       filter: ['==', ['geometry-type'], 'Point'],
       layout: {
-        'text-field': ['get', 'icono'],
-        'text-size': 11,
-        'text-allow-overlap': true,
+        'icon-image': ['get', 'icono'],
+        'icon-size': 0.35,
+        'icon-allow-overlap': true,
       },
     })
 

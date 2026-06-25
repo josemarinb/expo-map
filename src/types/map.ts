@@ -101,3 +101,17 @@ export function getIconoZona(tipo: string): string {
   if (tipo === 'acceso') return '🚪'
   return ZONA_ICONOS[tipo as ZonaTipo] ?? ZONA_ICONOS.otro
 }
+
+// Id estable para registrar/buscar el ícono como imagen en MapLibre (ver src/lib/iconos.ts).
+// Distinto de getIconoZona: ese devuelve el emoji para texto DOM normal (sí soporta color),
+// este devuelve la clave de la imagen ya registrada vía map.addImage (necesario porque
+// MapLibre renderiza text-field con fuentes SDF sin color, no con emoji reales).
+export function getIconoIdZona(tipo: string): string {
+  if (tipo === 'acceso') return 'acceso'
+  return (tipo as ZonaTipo) in ZONA_ICONOS ? tipo : 'otro'
+}
+
+export const TODOS_LOS_ICONOS: Record<string, string> = {
+  ...ZONA_ICONOS,
+  acceso: '🚪',
+}

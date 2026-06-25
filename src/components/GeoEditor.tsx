@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import type { Evento, Zona, ZonaTipo } from '../types/map'
-import { ZONA_COLORES, getColorZona, getIconoZona } from '../types/map'
+import { ZONA_COLORES, getColorZona, getIconoZona, getIconoIdZona, TODOS_LOS_ICONOS } from '../types/map'
 import { useZonasGeoEditor, useSaveGeom, useUpdateZonaInfo } from '../hooks/useGeoEditor'
 import { parseWKT, geometryToWKT, getCentroid } from '../lib/geo'
+import { registrarIconoZona } from '../lib/iconos'
 
 interface GeoEditorProps {
   evento: Evento
@@ -65,7 +66,7 @@ function zonasExistentesGeoJSON(zonas: Zona[]): GeoJSON.FeatureCollection {
       properties: {
         slug: zona.slug,
         nombre: zona.nombre,
-        icono: getIconoZona(zona.tipo),
+        icono: getIconoIdZona(zona.tipo),
       },
     })
   }
@@ -149,6 +150,10 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
     }
 
     map.on('load', () => {
+      Object.entries(TODOS_LOS_ICONOS).forEach(([id, emoji]) => {
+        registrarIconoZona(map, id, emoji)
+      })
+
       const planoImagenUrl = evento.metadata?.plano_imagen_url
       const corners = evento.metadata?.imagen_corners
 
@@ -201,8 +206,13 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
         source: 'zonas-existentes',
         filter: ['==', ['geometry-type'], 'Polygon'],
         layout: {
-          'text-field': ['concat', ['get', 'icono'], '  ', ['get', 'nombre']],
+          'icon-image': ['get', 'icono'],
+          'icon-size': 0.35,
+          'icon-anchor': 'bottom',
+          'text-field': ['get', 'nombre'],
           'text-size': 10,
+          'text-anchor': 'top',
+          'text-offset': [0, 0.2],
         },
         paint: { 'text-color': '#16382B', 'text-halo-color': '#fff', 'text-halo-width': 1 },
       })
@@ -218,7 +228,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
         type: 'symbol',
         source: 'zonas-existentes',
         filter: ['==', ['geometry-type'], 'Point'],
-        layout: { 'text-field': ['get', 'icono'], 'text-size': 9, 'text-allow-overlap': true },
+        layout: { 'icon-image': ['get', 'icono'], 'icon-size': 0.3, 'icon-allow-overlap': true },
       })
 
       map.addSource('preview-line', {
