@@ -68,13 +68,36 @@ export interface Capa {
   orden: number
 }
 
-// Colores por tipo de zona (para el mapa)
+// Paleta de marca: verde-oscuro #16382B, verde-medio #2E7D32, dorado #C0892C, crema #F7F4EC.
+// Cada tipo usa una variación tonal de esa paleta (más un par de acentos tierra) para
+// mantener la identidad visual sin perder la distinción entre categorías en el mapa.
 export const ZONA_COLORES: Record<ZonaTipo, { fill: string; stroke: string }> = {
-  pabellon:        { fill: '#EBF4FF', stroke: '#378ADD' },
-  salon:           { fill: '#F3F0FF', stroke: '#7F77DD' },
-  area_servicios:  { fill: '#EDFAF4', stroke: '#1D9E75' },
-  estacionamiento: { fill: '#F1EFE8', stroke: '#888780' },
-  parque:          { fill: '#EAF3DE', stroke: '#639922' },
-  deposito:        { fill: '#FEF3DC', stroke: '#BA7517' },
-  otro:            { fill: '#F1EFE8', stroke: '#B4B2A9' },
+  pabellon:        { fill: '#EAF3EC', stroke: '#2E7D32' }, // verde-medio
+  salon:           { fill: '#F5EFE3', stroke: '#C0892C' }, // dorado
+  area_servicios:  { fill: '#E9F0EE', stroke: '#16382B' }, // verde-oscuro
+  estacionamiento: { fill: '#F2EFE9', stroke: '#8C7A5B' }, // bronce neutro
+  parque:          { fill: '#EEF3E3', stroke: '#6B8E4E' }, // verde oliva
+  deposito:        { fill: '#F7F0E1', stroke: '#A66A2E' }, // terracota
+  otro:            { fill: '#F7F4EC', stroke: '#6B6457' }, // crema / gris cálido
+}
+
+// Íconos por tipo de zona (para etiquetas en el mapa, legibles también en mobile)
+export const ZONA_ICONOS: Record<ZonaTipo, string> = {
+  pabellon: '🏛️',
+  salon: '🏢',
+  area_servicios: '🚻',
+  estacionamiento: '🅿️',
+  parque: '🌳',
+  deposito: '📦',
+  otro: '📍',
+}
+
+// Helpers con fallback seguro para tipos fuera del enum (ej. "acceso", datos legados)
+export function getColorZona(tipo: string): { fill: string; stroke: string } {
+  return ZONA_COLORES[tipo as ZonaTipo] ?? ZONA_COLORES.otro
+}
+
+export function getIconoZona(tipo: string): string {
+  if (tipo === 'acceso') return '🚪'
+  return ZONA_ICONOS[tipo as ZonaTipo] ?? ZONA_ICONOS.otro
 }

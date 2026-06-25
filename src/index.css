@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-dark: #16382b;
+  --color-brand-green: #2e7d32;
+  --color-brand-gold: #c0892c;
+  --color-brand-cream: #f7f4ec;
+}
+
 .zona-popup .maplibregl-popup-content {
   padding: 4px 10px !important;
   border-radius: 6px !important;

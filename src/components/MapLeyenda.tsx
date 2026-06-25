@@ -1,4 +1,4 @@
-import { ZONA_COLORES } from '../types/map'
+import { ZONA_COLORES, ZONA_ICONOS } from '../types/map'
 import type { ZonaTipo } from '../types/map'
 
 interface MapLeyendaProps {
@@ -32,13 +32,13 @@ export default function MapLeyenda({ capasVisibles, onToggle }: MapLeyendaProps)
           >
             <span
               className="h-3 w-3 shrink-0 rounded-sm"
-              style={{ backgroundColor: ZONA_COLORES[tipo].fill }}
+              style={{ backgroundColor: ZONA_COLORES[tipo].stroke }}
             />
             <span
-              className="text-xs text-gray-700"
+              className="text-xs text-brand-dark"
               style={{ opacity: visible ? 1 : 0.4 }}
             >
-              {NOMBRES_TIPO[tipo]}
+              {ZONA_ICONOS[tipo]} {NOMBRES_TIPO[tipo]}
             </span>
           </button>
         )

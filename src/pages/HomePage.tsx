@@ -14,7 +14,7 @@ function formatFecha(fecha: string) {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-xl border border-gray-200 p-4">
+    <div className="rounded-xl border border-gray-200 bg-white p-4">
       <div className="h-5 w-2/3 rounded bg-gray-200 animate-pulse mb-3" />
       <div className="h-4 w-1/3 rounded bg-gray-200 animate-pulse mb-4" />
       <div className="h-4 w-1/2 rounded bg-gray-200 animate-pulse mb-6" />
@@ -36,10 +36,10 @@ function EventoCard({
   const navigate = useNavigate()
 
   return (
-    <div className="rounded-xl border border-gray-200 p-4">
-      <h2 className="text-lg font-medium text-gray-900 mb-2">{evento.nombre}</h2>
+    <div className="rounded-xl border border-gray-200 bg-white p-4">
+      <h2 className="text-lg font-medium text-brand-dark mb-2">{evento.nombre}</h2>
 
-      <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 mb-3">
+      <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-brand-cream text-brand-green mb-3">
         {evento.tipo}
       </span>
 
@@ -55,14 +55,14 @@ function EventoCard({
         <button
           type="button"
           onClick={() => navigate(`/mapa/${evento.slug}`)}
-          className="flex-1 rounded-lg bg-blue-600 py-2 text-sm text-white hover:bg-blue-700"
+          className="flex-1 rounded-lg bg-brand-green py-2 text-sm text-white hover:bg-brand-dark"
         >
           Ver mapa
         </button>
         <button
           type="button"
           onClick={() => navigate(`/admin/${evento.slug}/georef`)}
-          className="flex-1 rounded-lg border border-gray-300 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          className="flex-1 rounded-lg border border-brand-gold text-brand-gold py-2 text-sm hover:bg-brand-gold/10"
         >
           Editar mapa
         </button>
@@ -83,10 +83,10 @@ export default function HomePage() {
   const [eventoQR, setEventoQR] = useState<Evento | null>(null)
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-brand-cream">
       <header className="text-center pt-10 pb-6">
-        <p className="text-xl font-semibold text-gray-900">MapasExp</p>
-        <p className="text-sm text-gray-500">Navegación inteligente para eventos</p>
+        <p className="text-xl font-semibold text-brand-dark">MapasExp</p>
+        <p className="text-sm text-brand-gold">Navegación inteligente para eventos</p>
       </header>
 
       <main className="mx-auto max-w-[800px] px-8">

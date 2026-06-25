@@ -18,7 +18,7 @@ function NotFoundPage() {
       <div className="text-center">
         <p className="text-4xl font-medium text-gray-300 mb-3">404</p>
         <p className="text-gray-500">Página no encontrada</p>
-        <a href="/" className="text-blue-600 text-sm mt-4 inline-block">
+        <a href="/" className="text-brand-green text-sm mt-4 inline-block">
           Volver al inicio
         </a>
       </div>

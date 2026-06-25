@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
-import type { Evento, Zona, ZonaTipo } from '../types/map'
-import { ZONA_COLORES } from '../types/map'
+import type { Evento, Zona } from '../types/map'
+import { getColorZona, getIconoZona } from '../types/map'
 import MapLeyenda from './MapLeyenda'
 
 interface MapViewerProps {
@@ -10,6 +10,7 @@ interface MapViewerProps {
 }
 
 const CENTRO_DEFAULT: [number, number] = [-57.531271, -25.230269]
+const ESTILO_MAPA = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'
 
 function parseWKT(wkt: string): GeoJSON.Geometry | null {
   const point = /^POINT\(\s*([-\d.]+)\s+([-\d.]+)\s*\)$/i.exec(wkt.trim())
@@ -41,7 +42,7 @@ function zonasToGeoJSON(zonas: Zona[]): GeoJSON.FeatureCollection {
     const geometry = parseWKT(zona.geom_wkt)
     if (!geometry) continue
 
-    const colores = ZONA_COLORES[zona.tipo]
+    const colores = getColorZona(zona.tipo)
     features.push({
       type: 'Feature',
       geometry,
@@ -49,6 +50,7 @@ function zonasToGeoJSON(zonas: Zona[]): GeoJSON.FeatureCollection {
         slug: zona.slug,
         nombre: zona.nombre,
         tipo: zona.tipo,
+        icono: zona.icono || getIconoZona(zona.tipo),
         color_fill: zona.color_fill ?? colores.fill,
         color_stroke: zona.color_stroke ?? colores.stroke,
       },
@@ -69,6 +71,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
   const popupRef = useRef<maplibregl.Popup | null>(null)
   const [planoOpacity, setPlanoOpacity] = useState(0.6)
   const [planoCargado, setPlanoCargado] = useState(false)
+  const [vista3D, setVista3D] = useState(false)
   const [capasVisibles, setCapasVisibles] = useState<Record<string, boolean>>({
     pabellon: true,
     salon: true,
@@ -87,7 +90,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+      style: ESTILO_MAPA,
       center: centro ?? CENTRO_DEFAULT,
       zoom: evento.metadata?.zoom_inicial ?? 15,
       attributionControl: false,
@@ -173,7 +176,21 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
       filter: ['==', ['geometry-type'], 'Polygon'],
       paint: {
         'fill-color': ['get', 'color_fill'],
-        'fill-opacity': 0.5,
+        'fill-opacity': 0.45,
+      },
+    })
+
+    // Variante 3D (oculta por defecto): mismo polígono con un relieve sutil
+    map.addLayer({
+      id: 'zonas-fill-3d',
+      type: 'fill-extrusion',
+      source: 'zonas-source',
+      filter: ['==', ['geometry-type'], 'Polygon'],
+      layout: { visibility: 'none' },
+      paint: {
+        'fill-extrusion-color': ['get', 'color_fill'],
+        'fill-extrusion-height': 6,
+        'fill-extrusion-opacity': 0.85,
       },
     })
 
@@ -184,7 +201,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
       filter: ['==', ['geometry-type'], 'Polygon'],
       paint: {
         'line-color': ['get', 'color_stroke'],
-        'line-width': 1.5,
+        'line-width': 1,
       },
     })
 
@@ -194,12 +211,12 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
       source: 'zonas-source',
       filter: ['==', ['geometry-type'], 'Polygon'],
       layout: {
-        'text-field': ['get', 'nombre'],
+        'text-field': ['concat', ['get', 'icono'], '  ', ['get', 'nombre']],
         'text-size': 11,
         'text-anchor': 'center',
       },
       paint: {
-        'text-color': '#1a1a1a',
+        'text-color': '#16382B',
         'text-halo-color': '#ffffff',
         'text-halo-width': 1.5,
       },
@@ -212,9 +229,21 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
       filter: ['==', ['geometry-type'], 'Point'],
       paint: {
         'circle-color': ['get', 'color_fill'],
-        'circle-radius': 8,
+        'circle-radius': 10,
         'circle-stroke-color': ['get', 'color_stroke'],
-        'circle-stroke-width': 2,
+        'circle-stroke-width': 1.5,
+      },
+    })
+
+    map.addLayer({
+      id: 'zonas-point-icon',
+      type: 'symbol',
+      source: 'zonas-source',
+      filter: ['==', ['geometry-type'], 'Point'],
+      layout: {
+        'text-field': ['get', 'icono'],
+        'text-size': 11,
+        'text-allow-overlap': true,
       },
     })
 
@@ -312,6 +341,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
       const filtro = ['all', baseGeom, ...exclusiones] as maplibregl.FilterSpecification
 
       map.setFilter('zonas-fill', filtro)
+      map.setFilter('zonas-fill-3d', filtro)
       map.setFilter('zonas-stroke', filtro)
       map.setFilter('zonas-label', filtro)
     }
@@ -319,6 +349,18 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
     if (zonaSeleccionada && zonaSeleccionada.tipo === tipo && nuevasCapas[tipo] === false) {
       cerrarPanel()
     }
+  }
+
+  function handleToggleVista3D() {
+    const map = mapRef.current
+    if (!map) return
+
+    const nuevoValor = !vista3D
+    setVista3D(nuevoValor)
+
+    map.setLayoutProperty('zonas-fill', 'visibility', nuevoValor ? 'none' : 'visible')
+    map.setLayoutProperty('zonas-fill-3d', 'visibility', nuevoValor ? 'visible' : 'none')
+    map.easeTo({ pitch: nuevoValor ? 45 : 0, duration: 600 })
   }
 
   function handleGPS() {
@@ -425,7 +467,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
             }}
             onFocus={() => setMostrarDropdown(true)}
             placeholder="Buscar pabellón, stand, servicio..."
-            className="w-full rounded-full bg-white px-4 py-2 text-sm shadow-md outline-none"
+            className="w-full rounded-full bg-white px-4 py-2 text-sm shadow-md outline-none focus:ring-2 focus:ring-brand-green/40"
           />
 
           {mostrarDropdown && resultados.length > 0 && (
@@ -437,12 +479,14 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
                   onClick={() => handleSeleccionarResultado(zona)}
                   className="w-full flex items-center justify-between px-4 py-2 text-left text-sm hover:bg-gray-50"
                 >
-                  <span>{zona.nombre}</span>
+                  <span>
+                    {zona.icono || getIconoZona(zona.tipo)} {zona.nombre}
+                  </span>
                   <span
                     className="text-xs px-2 py-0.5 rounded-full"
                     style={{
-                      backgroundColor: ZONA_COLORES[zona.tipo].fill,
-                      color: ZONA_COLORES[zona.tipo].stroke,
+                      backgroundColor: getColorZona(zona.tipo).fill,
+                      color: getColorZona(zona.tipo).stroke,
                     }}
                   >
                     {zona.tipo}
@@ -480,6 +524,16 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
 
         <button
           type="button"
+          onClick={handleToggleVista3D}
+          className={`absolute top-4 right-4 z-10 rounded-full px-3 py-2 text-xs font-medium shadow-md ${
+            vista3D ? 'bg-brand-green text-white' : 'bg-white text-brand-dark'
+          }`}
+        >
+          Vista 3D
+        </button>
+
+        <button
+          type="button"
           onClick={handleResetView}
           className="absolute bottom-20 right-6 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-md"
           aria-label="Restablecer vista"
@@ -490,7 +544,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
             fill="none"
             stroke="currentColor"
             strokeWidth={2}
-            className="h-5 w-5 text-gray-700"
+            className="h-5 w-5 text-brand-dark"
           >
             <path d="M3 9l9-6 9 6" />
             <path d="M5 10v9a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1v-9" />
@@ -509,7 +563,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
             fill="none"
             stroke="currentColor"
             strokeWidth={2}
-            className="h-5 w-5 text-gray-700"
+            className="h-5 w-5 text-brand-dark"
           >
             <circle cx="12" cy="12" r="3" />
             <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
@@ -523,7 +577,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
 }
 
 function PanelInfo({ zona, onClose }: { zona: Zona; onClose: () => void }) {
-  const colores = ZONA_COLORES[zona.tipo as ZonaTipo]
+  const colores = getColorZona(zona.tipo)
 
   return (
     <div className="w-[280px] h-screen bg-white border-l border-gray-200 z-20 overflow-y-auto">
@@ -566,10 +620,10 @@ function PanelInfo({ zona, onClose }: { zona: Zona; onClose: () => void }) {
           className="inline-block text-xs px-2 py-0.5 rounded-full mb-2"
           style={{ backgroundColor: colores.fill, color: colores.stroke }}
         >
-          {zona.tipo}
+          {zona.icono || getIconoZona(zona.tipo)} {zona.tipo}
         </span>
 
-        <h2 className="text-lg font-medium text-gray-900 mb-2">{zona.nombre}</h2>
+        <h2 className="text-lg font-medium text-brand-dark mb-2">{zona.nombre}</h2>
 
         {zona.descripcion && (
           <p className="text-sm text-gray-500 mb-3">{zona.descripcion}</p>
@@ -590,7 +644,7 @@ function PanelInfo({ zona, onClose }: { zona: Zona; onClose: () => void }) {
         <button
           type="button"
           onClick={() => console.log('Cómo llegar:', zona.nombre)}
-          className="mt-2 w-full border border-gray-300 rounded-lg py-2 text-sm text-gray-700 hover:bg-gray-50"
+          className="mt-2 w-full border border-brand-green text-brand-green rounded-lg py-2 text-sm hover:bg-brand-green/5"
         >
           Cómo llegar
         </button>

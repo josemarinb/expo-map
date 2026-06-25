@@ -21,7 +21,6 @@ export function useZonasGeoEditor(eventoId: string) {
         .from('zonas')
         .select('*')
         .eq('evento_id', eventoId)
-        .neq('tipo', 'acceso')
         .order('nombre', { ascending: true })
     )
       .then(({ data, error: supabaseError }) => {
@@ -91,4 +90,33 @@ export function useSaveGeom() {
   }, [])
 
   return { saving, lastSaved, error, saveGeom }
+}
+
+export function useUpdateZonaInfo() {
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+
+  const updateZonaInfo = useCallback(
+    async (zonaId: string, cambios: { nombre: string; tipo: string }): Promise<boolean> => {
+      setSaving(true)
+      setError(null)
+
+      const { error: updateError } = await supabase
+        .from('zonas')
+        .update({ nombre: cambios.nombre, tipo: cambios.tipo })
+        .eq('id', zonaId)
+
+      setSaving(false)
+
+      if (updateError) {
+        setError(new Error(updateError.message))
+        return false
+      }
+
+      return true
+    },
+    []
+  )
+
+  return { saving, error, updateZonaInfo }
 }

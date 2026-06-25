@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import type { Evento, Zona, ZonaTipo } from '../types/map'
-import { ZONA_COLORES } from '../types/map'
-import { useZonasGeoEditor, useSaveGeom } from '../hooks/useGeoEditor'
+import { ZONA_COLORES, getColorZona, getIconoZona } from '../types/map'
+import { useZonasGeoEditor, useSaveGeom, useUpdateZonaInfo } from '../hooks/useGeoEditor'
 import { parseWKT, geometryToWKT, getCentroid } from '../lib/geo'
 
 interface GeoEditorProps {
@@ -14,11 +14,8 @@ type TabPanel = 'sin' | 'completadas'
 type Toast = { msg: string; type: 'success' | 'error' } | null
 
 const CENTRO_DEFAULT: [number, number] = [-57.531271, -25.230269]
+const ESTILO_MAPA = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'
 const RADIO_VERTICE_PX = 15
-
-function getColorZona(tipo: string) {
-  return ZONA_COLORES[tipo as ZonaTipo] ?? ZONA_COLORES.otro
-}
 
 function getEventoCentro(evento: Evento): [number, number] {
   if (evento.metadata?.centro) return evento.metadata.centro
@@ -65,7 +62,11 @@ function zonasExistentesGeoJSON(zonas: Zona[]): GeoJSON.FeatureCollection {
     features.push({
       type: 'Feature',
       geometry,
-      properties: { slug: zona.slug, nombre: zona.nombre },
+      properties: {
+        slug: zona.slug,
+        nombre: zona.nombre,
+        icono: zona.icono || getIconoZona(zona.tipo),
+      },
     })
   }
 
@@ -75,6 +76,7 @@ function zonasExistentesGeoJSON(zonas: Zona[]): GeoJSON.FeatureCollection {
 export default function GeoEditor({ evento }: GeoEditorProps) {
   const { zonas, zonasConGeom, zonasSinGeom, refetch } = useZonasGeoEditor(evento.id)
   const { saving, error: saveError, saveGeom } = useSaveGeom()
+  const { saving: savingInfo, error: infoError, updateZonaInfo } = useUpdateZonaInfo()
 
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
@@ -85,6 +87,8 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
 
   const [tab, setTab] = useState<TabPanel>('sin')
   const [zonaSeleccionada, setZonaSeleccionada] = useState<Zona | null>(null)
+  const [nombreEdit, setNombreEdit] = useState('')
+  const [tipoEdit, setTipoEdit] = useState('')
   const [drawMode, setDrawMode] = useState<DrawMode>('navigate')
   const [drawingCoords, setDrawingCoords] = useState<[number, number][]>([])
   const [pendingWKT, setPendingWKT] = useState<string | null>(null)
@@ -126,7 +130,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+      style: ESTILO_MAPA,
       center: centro ?? CENTRO_DEFAULT,
       zoom: evento.metadata?.zoom_inicial ?? 15,
       attributionControl: false,
@@ -183,28 +187,38 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
         id: 'zonas-existentes-fill',
         type: 'fill',
         source: 'zonas-existentes',
-        paint: { 'fill-color': '#3B8BD4', 'fill-opacity': 0.2 },
+        paint: { 'fill-color': '#2E7D32', 'fill-opacity': 0.15 },
       })
       map.addLayer({
         id: 'zonas-existentes-stroke',
         type: 'line',
         source: 'zonas-existentes',
-        paint: { 'line-color': '#3B8BD4', 'line-width': 1.5 },
+        paint: { 'line-color': '#2E7D32', 'line-width': 1 },
       })
       map.addLayer({
         id: 'zonas-existentes-label',
         type: 'symbol',
         source: 'zonas-existentes',
         filter: ['==', ['geometry-type'], 'Polygon'],
-        layout: { 'text-field': ['get', 'nombre'], 'text-size': 10 },
-        paint: { 'text-color': '#1a1a1a', 'text-halo-color': '#fff', 'text-halo-width': 1 },
+        layout: {
+          'text-field': ['concat', ['get', 'icono'], '  ', ['get', 'nombre']],
+          'text-size': 10,
+        },
+        paint: { 'text-color': '#16382B', 'text-halo-color': '#fff', 'text-halo-width': 1 },
       })
       map.addLayer({
         id: 'zonas-existentes-points',
         type: 'circle',
         source: 'zonas-existentes',
         filter: ['==', ['geometry-type'], 'Point'],
-        paint: { 'circle-color': '#3B8BD4', 'circle-radius': 6, 'circle-opacity': 0.5 },
+        paint: { 'circle-color': '#2E7D32', 'circle-radius': 6, 'circle-opacity': 0.6 },
+      })
+      map.addLayer({
+        id: 'zonas-existentes-points-icon',
+        type: 'symbol',
+        source: 'zonas-existentes',
+        filter: ['==', ['geometry-type'], 'Point'],
+        layout: { 'text-field': ['get', 'icono'], 'text-size': 9, 'text-allow-overlap': true },
       })
 
       map.addSource('preview-line', {
@@ -215,7 +229,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
         id: 'preview-line-layer',
         type: 'line',
         source: 'preview-line',
-        paint: { 'line-color': '#F59E0B', 'line-width': 1.5, 'line-dasharray': [2, 2] },
+        paint: { 'line-color': '#C0892C', 'line-width': 1.5, 'line-dasharray': [2, 2] },
       })
 
       map.addSource('zona-edit', {
@@ -226,13 +240,13 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
         id: 'zona-edit-fill',
         type: 'fill',
         source: 'zona-edit',
-        paint: { 'fill-color': '#F59E0B', 'fill-opacity': 0.3 },
+        paint: { 'fill-color': '#C0892C', 'fill-opacity': 0.25 },
       })
       map.addLayer({
         id: 'zona-edit-stroke',
         type: 'line',
         source: 'zona-edit',
-        paint: { 'line-color': '#F59E0B', 'line-width': 2, 'line-dasharray': [2, 2] },
+        paint: { 'line-color': '#C0892C', 'line-width': 1.5, 'line-dasharray': [2, 2] },
       })
       map.addLayer({
         id: 'zona-edit-points',
@@ -240,7 +254,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
         source: 'zona-edit',
         filter: ['==', ['geometry-type'], 'Point'],
         paint: {
-          'circle-color': '#F59E0B',
+          'circle-color': '#C0892C',
           'circle-radius': 6,
           'circle-stroke-color': '#fff',
           'circle-stroke-width': 2,
@@ -432,6 +446,14 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
     }
   }, [saveError])
 
+  // ── Toast de error al actualizar nombre/tipo ──────────────────────────
+  useEffect(() => {
+    if (infoError) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reacciona a un cambio de estado externo (RPC)
+      mostrarToast({ msg: `Error al actualizar: ${infoError.message}`, type: 'error' })
+    }
+  }, [infoError])
+
   // ── Coordenadas del cursor (modo punto / polígono) ────────────────────
   useEffect(() => {
     const map = mapRef.current
@@ -489,6 +511,8 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
     setPendingWKT(null)
     setDrawMode('navigate')
     setZonaSeleccionada(zona)
+    setNombreEdit(zona.nombre)
+    setTipoEdit(zona.tipo)
 
     const map = mapRef.current
     if (!map) return
@@ -578,6 +602,19 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
     setDrawMode('navigate')
   }
 
+  async function handleGuardarInfo() {
+    if (!zonaSeleccionada) return
+    const nombre = nombreEdit.trim()
+    if (!nombre) return
+
+    const ok = await updateZonaInfo(zonaSeleccionada.id, { nombre, tipo: tipoEdit })
+    if (ok) {
+      mostrarToast({ msg: `✓ ${nombre} actualizada`, type: 'success' })
+      setZonaSeleccionada({ ...zonaSeleccionada, nombre, tipo: tipoEdit as ZonaTipo })
+      refetch()
+    }
+  }
+
   function handleResetView() {
     const bounds = evento.metadata?.plano_bounds
     if (!bounds || bounds.length !== 4) return
@@ -593,10 +630,15 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
   const total = zonas.length
   const completadas = zonasConGeom.length
   const porcentaje = total === 0 ? 0 : Math.round((completadas / total) * 100)
-  const colorBarra = porcentaje > 80 ? 'bg-green-500' : porcentaje > 50 ? 'bg-yellow-500' : 'bg-red-500'
+  const colorBarra =
+    porcentaje > 80 ? 'bg-brand-green' : porcentaje > 50 ? 'bg-brand-gold' : 'bg-red-500'
 
   const listaActiva = tab === 'sin' ? zonasSinGeom : zonasConGeom
   const puedeEditar = Boolean(pendingWKT || zonaSeleccionada?.geom_wkt)
+
+  const tiposBase = Object.keys(ZONA_COLORES)
+  const tiposDisponibles =
+    tipoEdit && !tiposBase.includes(tipoEdit) ? [...tiposBase, tipoEdit] : tiposBase
 
   const instrucciones: Record<DrawMode, string> = {
     navigate: 'Seleccioná una zona y un modo para comenzar.',
@@ -608,14 +650,14 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
   return (
     <div className="flex h-screen w-full">
       <div className="w-[300px] flex-shrink-0 overflow-y-auto border-r border-gray-200 bg-white flex flex-col">
-        <div className="p-4 border-b border-gray-200">
-          <h1 className="text-lg font-semibold text-gray-900">GeoEditor</h1>
-          <p className="text-sm text-gray-500 mb-3">{evento.nombre}</p>
+        <div className="p-4 border-b border-gray-200 bg-brand-dark">
+          <h1 className="text-lg font-semibold text-white">GeoEditor</h1>
+          <p className="text-sm text-brand-cream/70 mb-3">{evento.nombre}</p>
 
-          <p className="text-xs text-gray-500 mb-1">
+          <p className="text-xs text-brand-cream/70 mb-1">
             {completadas} / {total} zonas georeferenciadas
           </p>
-          <div className="h-2 w-full rounded-full bg-gray-100">
+          <div className="h-2 w-full rounded-full bg-white/15">
             <div
               className={`h-2 rounded-full ${colorBarra}`}
               style={{ width: `${porcentaje}%` }}
@@ -623,12 +665,50 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
           </div>
         </div>
 
+        {zonaSeleccionada && (
+          <div className="p-4 border-b border-gray-200 bg-gray-50">
+            <label className="block text-xs text-gray-500 mb-1">Nombre</label>
+            <input
+              type="text"
+              value={nombreEdit}
+              onChange={(e) => setNombreEdit(e.target.value)}
+              className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm mb-2"
+            />
+
+            <label className="block text-xs text-gray-500 mb-1">Tipo</label>
+            <select
+              value={tipoEdit}
+              onChange={(e) => setTipoEdit(e.target.value)}
+              className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm mb-2"
+            >
+              {tiposDisponibles.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              onClick={handleGuardarInfo}
+              disabled={
+                savingInfo ||
+                !nombreEdit.trim() ||
+                (nombreEdit === zonaSeleccionada.nombre && tipoEdit === zonaSeleccionada.tipo)
+              }
+              className="w-full rounded-lg bg-brand-green py-1.5 text-sm text-white disabled:opacity-40 hover:bg-brand-dark"
+            >
+              {savingInfo ? 'Guardando...' : 'Guardar nombre / tipo'}
+            </button>
+          </div>
+        )}
+
         <div className="flex border-b border-gray-200">
           <button
             type="button"
             onClick={() => setTab('sin')}
             className={`flex-1 py-2 text-sm border-b-2 ${
-              tab === 'sin' ? 'border-amber-500 text-gray-900' : 'border-transparent text-gray-500'
+              tab === 'sin' ? 'border-brand-gold text-brand-dark' : 'border-transparent text-gray-500'
             }`}
           >
             Sin posición ({zonasSinGeom.length})
@@ -638,7 +718,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
             onClick={() => setTab('completadas')}
             className={`flex-1 py-2 text-sm border-b-2 ${
               tab === 'completadas'
-                ? 'border-green-500 text-gray-900'
+                ? 'border-brand-green text-brand-dark'
                 : 'border-transparent text-gray-500'
             }`}
           >
@@ -653,11 +733,13 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
               type="button"
               onClick={() => seleccionarZona(zona)}
               className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 text-left border-b border-gray-100 ${
-                zonaSeleccionada?.id === zona.id ? 'bg-blue-50' : 'hover:bg-gray-50'
+                zonaSeleccionada?.id === zona.id ? 'bg-brand-cream' : 'hover:bg-gray-50'
               }`}
             >
               <div>
-                <p className="text-sm font-medium text-gray-900">{zona.nombre}</p>
+                <p className="text-sm font-medium text-brand-dark">
+                  {zona.icono || getIconoZona(zona.tipo)} {zona.nombre}
+                </p>
                 <span
                   className="inline-block text-[10px] px-1.5 py-0.5 rounded-full mt-1"
                   style={{
@@ -670,7 +752,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
               </div>
 
               {zona.geom_wkt ? (
-                <span className="text-green-600 text-sm">✓</span>
+                <span className="text-brand-green text-sm">✓</span>
               ) : (
                 <span className="text-gray-300 text-sm">●</span>
               )}
@@ -691,7 +773,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
             <button
               type="button"
               onClick={cerrarPoligono}
-              className="w-full mb-2 rounded-lg border border-amber-400 text-amber-600 py-2 text-sm hover:bg-amber-50"
+              className="w-full mb-2 rounded-lg border border-brand-gold text-brand-gold py-2 text-sm hover:bg-brand-gold/10"
             >
               Cerrar polígono
             </button>
@@ -703,7 +785,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
             type="button"
             onClick={handleGuardar}
             disabled={!pendingWKT || saving}
-            className="w-full mb-2 rounded-lg bg-green-600 py-2 text-sm text-white disabled:opacity-40 hover:bg-green-700"
+            className="w-full mb-2 rounded-lg bg-brand-green py-2 text-sm text-white disabled:opacity-40 hover:bg-brand-dark"
           >
             {saving ? 'Guardando...' : 'Guardar posición'}
           </button>
@@ -726,7 +808,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
             disabled={!zonaSeleccionada}
             onClick={handleModoPunto}
             className={`rounded-lg px-3 py-2 text-sm shadow-md disabled:opacity-40 ${
-              drawMode === 'point' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'
+              drawMode === 'point' ? 'bg-brand-green text-white' : 'bg-white text-brand-dark'
             }`}
           >
             📍 Punto
@@ -736,7 +818,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
             disabled={!zonaSeleccionada}
             onClick={handleModoPoligono}
             className={`rounded-lg px-3 py-2 text-sm shadow-md disabled:opacity-40 ${
-              drawMode === 'polygon' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'
+              drawMode === 'polygon' ? 'bg-brand-green text-white' : 'bg-white text-brand-dark'
             }`}
           >
             ⬡ Polígono
@@ -746,7 +828,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
             disabled={!zonaSeleccionada || !puedeEditar}
             onClick={handleModoEditar}
             className={`rounded-lg px-3 py-2 text-sm shadow-md disabled:opacity-40 ${
-              drawMode === 'edit' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700'
+              drawMode === 'edit' ? 'bg-brand-green text-white' : 'bg-white text-brand-dark'
             }`}
           >
             ✏️ Editar
@@ -755,7 +837,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
             type="button"
             disabled={!zonaSeleccionada?.geom_wkt}
             onClick={handleBorrar}
-            className="rounded-lg bg-white px-3 py-2 text-sm text-gray-700 shadow-md disabled:opacity-40"
+            className="rounded-lg bg-white px-3 py-2 text-sm text-brand-dark shadow-md disabled:opacity-40"
           >
             🗑️ Borrar
           </button>
@@ -795,7 +877,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
               fill="none"
               stroke="currentColor"
               strokeWidth={2}
-              className="h-5 w-5 text-gray-700"
+              className="h-5 w-5 text-brand-dark"
             >
               <path d="M3 9l9-6 9 6" />
               <path d="M5 10v9a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1v-9" />
@@ -804,7 +886,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
           <button
             type="button"
             onClick={() => mapRef.current?.zoomIn()}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md text-lg text-gray-700"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md text-lg text-brand-dark"
             aria-label="Acercar"
           >
             +
@@ -812,7 +894,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
           <button
             type="button"
             onClick={() => mapRef.current?.zoomOut()}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md text-lg text-gray-700"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-md text-lg text-brand-dark"
             aria-label="Alejar"
           >
             −
@@ -823,7 +905,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
       {toast && (
         <div
           className={`fixed bottom-6 right-6 z-50 rounded-lg px-4 py-3 text-sm text-white shadow-lg ${
-            toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+            toast.type === 'success' ? 'bg-brand-green' : 'bg-red-600'
           }`}
         >
           {toast.msg}

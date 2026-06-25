@@ -48,20 +48,20 @@ export default function ModalQR({ evento, onClose }: ModalQRProps) {
           <QRCodeCanvas value={url} size={200} />
         </div>
 
-        <p className="text-sm font-medium text-gray-900 mb-4">{evento.nombre}</p>
+        <p className="text-sm font-medium text-brand-dark mb-4">{evento.nombre}</p>
 
         <div className="flex flex-col gap-2">
           <button
             type="button"
             onClick={handleDescargar}
-            className="w-full rounded-lg bg-blue-600 py-2 text-sm text-white hover:bg-blue-700"
+            className="w-full rounded-lg bg-brand-green py-2 text-sm text-white hover:bg-brand-dark"
           >
             Descargar PNG
           </button>
           <button
             type="button"
             onClick={handleCopiarLink}
-            className="w-full rounded-lg border border-gray-300 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            className="w-full rounded-lg border border-brand-gold text-brand-gold py-2 text-sm hover:bg-brand-gold/10"
           >
             Copiar link
           </button>
