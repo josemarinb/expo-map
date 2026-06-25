@@ -94,8 +94,8 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
       zoom: evento.metadata?.zoom_inicial ?? 15,
       attributionControl: false,
       maxBounds: [
-        [-57.542, -25.236],
-        [-57.521, -25.224],
+        [-57.555, -25.245],
+        [-57.51, -25.215],
       ],
       maxZoom: 20,
     })
