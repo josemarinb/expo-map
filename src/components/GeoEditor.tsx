@@ -2,7 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import type { Evento, Zona, ZonaTipo } from '../types/map'
 import { ZONA_COLORES, getColorZona, getIconoZona, getIconoIdZona, TODOS_LOS_ICONOS } from '../types/map'
-import { useZonasGeoEditor, useSaveGeom, useUpdateZonaInfo } from '../hooks/useGeoEditor'
+import {
+  useZonasGeoEditor,
+  useSaveGeom,
+  useUpdateZonaInfo,
+  useCreateZona,
+} from '../hooks/useGeoEditor'
 import { parseWKT, geometryToWKT, getCentroid } from '../lib/geo'
 import { registrarIconoZona } from '../lib/iconos'
 
@@ -17,6 +22,27 @@ type Toast = { msg: string; type: 'success' | 'error' } | null
 const CENTRO_DEFAULT: [number, number] = [-57.531271, -25.230269]
 const ESTILO_MAPA = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'
 const RADIO_VERTICE_PX = 15
+const TIPOS_ZONA = Object.keys(ZONA_COLORES)
+
+function slugify(texto: string): string {
+  return texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+function generarSlugUnico(nombre: string, existentes: string[]): string {
+  const base = slugify(nombre) || 'zona'
+  let candidato = base
+  let i = 2
+  while (existentes.includes(candidato)) {
+    candidato = `${base}-${i}`
+    i++
+  }
+  return candidato
+}
 
 function getEventoCentro(evento: Evento): [number, number] {
   if (evento.metadata?.centro) return evento.metadata.centro
@@ -78,6 +104,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
   const { zonas, zonasConGeom, zonasSinGeom, refetch } = useZonasGeoEditor(evento.id)
   const { saving, error: saveError, saveGeom } = useSaveGeom()
   const { saving: savingInfo, error: infoError, updateZonaInfo } = useUpdateZonaInfo()
+  const { creating: creatingZona, error: createError, createZona } = useCreateZona()
 
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
@@ -90,6 +117,9 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
   const [zonaSeleccionada, setZonaSeleccionada] = useState<Zona | null>(null)
   const [nombreEdit, setNombreEdit] = useState('')
   const [tipoEdit, setTipoEdit] = useState('')
+  const [mostrarFormNueva, setMostrarFormNueva] = useState(false)
+  const [nombreNueva, setNombreNueva] = useState('')
+  const [tipoNueva, setTipoNueva] = useState<string>(TIPOS_ZONA[0])
   const [drawMode, setDrawMode] = useState<DrawMode>('navigate')
   const [drawingCoords, setDrawingCoords] = useState<[number, number][]>([])
   const [pendingWKT, setPendingWKT] = useState<string | null>(null)
@@ -464,6 +494,14 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
     }
   }, [infoError])
 
+  // ── Toast de error al crear zona ──────────────────────────────────────
+  useEffect(() => {
+    if (createError) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reacciona a un cambio de estado externo (RPC)
+      mostrarToast({ msg: `Error al crear zona: ${createError.message}`, type: 'error' })
+    }
+  }, [createError])
+
   // ── Coordenadas del cursor (modo punto / polígono) ────────────────────
   useEffect(() => {
     const map = mapRef.current
@@ -533,6 +571,29 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
       if (centro) map.flyTo({ center: centro, zoom: 18 })
     } else {
       map.flyTo({ center: getEventoCentro(evento), zoom: 17 })
+    }
+  }
+
+  async function handleCrearZona() {
+    const nombre = nombreNueva.trim()
+    if (!nombre) return
+
+    const slug = generarSlugUnico(nombre, zonas.map((z) => z.slug))
+    const nueva = await createZona({
+      evento_id: evento.id,
+      slug,
+      nombre,
+      tipo: tipoNueva,
+    })
+
+    if (nueva) {
+      mostrarToast({ msg: `✓ ${nombre} creada`, type: 'success' })
+      refetch()
+      setTab('sin')
+      seleccionarZona(nueva)
+      setMostrarFormNueva(false)
+      setNombreNueva('')
+      setTipoNueva(TIPOS_ZONA[0])
     }
   }
 
@@ -646,9 +707,8 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
   const listaActiva = tab === 'sin' ? zonasSinGeom : zonasConGeom
   const puedeEditar = Boolean(pendingWKT || zonaSeleccionada?.geom_wkt)
 
-  const tiposBase = Object.keys(ZONA_COLORES)
   const tiposDisponibles =
-    tipoEdit && !tiposBase.includes(tipoEdit) ? [...tiposBase, tipoEdit] : tiposBase
+    tipoEdit && !TIPOS_ZONA.includes(tipoEdit) ? [...TIPOS_ZONA, tipoEdit] : TIPOS_ZONA
 
   const instrucciones: Record<DrawMode, string> = {
     navigate: 'Seleccioná una zona y un modo para comenzar.',
@@ -673,6 +733,64 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
               style={{ width: `${porcentaje}%` }}
             />
           </div>
+        </div>
+
+        <div className="p-3 border-b border-gray-200">
+          {!mostrarFormNueva ? (
+            <button
+              type="button"
+              onClick={() => setMostrarFormNueva(true)}
+              className="w-full rounded-lg border border-dashed border-brand-green text-brand-green py-2 text-sm hover:bg-brand-green/5"
+            >
+              + Nueva zona
+            </button>
+          ) : (
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Nombre de la nueva zona</label>
+              <input
+                type="text"
+                value={nombreNueva}
+                onChange={(e) => setNombreNueva(e.target.value)}
+                placeholder="Ej: Manzana 26"
+                autoFocus
+                className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm mb-2"
+              />
+
+              <label className="block text-xs text-gray-500 mb-1">Tipo</label>
+              <select
+                value={tipoNueva}
+                onChange={(e) => setTipoNueva(e.target.value)}
+                className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm mb-2"
+              >
+                {TIPOS_ZONA.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleCrearZona}
+                  disabled={!nombreNueva.trim() || creatingZona}
+                  className="flex-1 rounded-lg bg-brand-green py-1.5 text-sm text-white disabled:opacity-40 hover:bg-brand-dark"
+                >
+                  {creatingZona ? 'Creando...' : 'Crear'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMostrarFormNueva(false)
+                    setNombreNueva('')
+                  }}
+                  className="flex-1 rounded-lg border border-gray-300 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {zonaSeleccionada && (

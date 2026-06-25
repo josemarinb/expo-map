@@ -92,6 +92,48 @@ export function useSaveGeom() {
   return { saving, lastSaved, error, saveGeom }
 }
 
+export function useCreateZona() {
+  const [creating, setCreating] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+
+  const createZona = useCallback(
+    async (datos: {
+      evento_id: string
+      slug: string
+      nombre: string
+      tipo: string
+    }): Promise<Zona | null> => {
+      setCreating(true)
+      setError(null)
+
+      const { data, error: insertError } = await supabase
+        .from('zonas')
+        .insert({
+          evento_id: datos.evento_id,
+          slug: datos.slug,
+          nombre: datos.nombre,
+          tipo: datos.tipo,
+          visible: true,
+          icono: '',
+        })
+        .select()
+        .single()
+
+      setCreating(false)
+
+      if (insertError) {
+        setError(new Error(insertError.message))
+        return null
+      }
+
+      return data as Zona
+    },
+    []
+  )
+
+  return { creating, error, createZona }
+}
+
 export function useUpdateZonaInfo() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<Error | null>(null)
