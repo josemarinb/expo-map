@@ -888,7 +888,10 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
           ))}
         </div>
 
-        <div className="p-4 border-t border-gray-200">
+        <div
+          className="p-4 border-t border-gray-200"
+          style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+        >
           <p className="text-xs text-gray-500 mb-3">{instrucciones[drawMode]}</p>
 
           {(drawMode === 'point' || drawMode === 'polygon') && cursorCoords && (
@@ -930,7 +933,10 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
       <div className="relative flex-1">
         <div ref={mapContainerRef} className="h-dvh w-full" />
 
-        <div className="absolute top-4 right-4 z-10 flex gap-2">
+        <div
+          className="absolute right-4 z-10 flex gap-2"
+          style={{ top: 'max(1rem, env(safe-area-inset-top))' }}
+        >
           <button
             type="button"
             disabled={!zonaSeleccionada}
@@ -972,7 +978,10 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
         </div>
 
         {planoCargado && (
-          <div className="absolute top-4 left-4 z-10 flex items-center gap-2 rounded-full bg-white px-3 py-1.5 shadow-md">
+          <div
+            className="absolute left-4 z-10 flex items-center gap-2 rounded-full bg-white px-3 py-1.5 shadow-md"
+            style={{ top: 'max(1rem, env(safe-area-inset-top))' }}
+          >
             <span className="text-xs text-gray-500">Plano: {Math.round(planoOpacity * 100)}%</span>
             <input
               type="range"
@@ -992,7 +1001,10 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
           </div>
         )}
 
-        <div className="absolute bottom-6 right-6 z-10 flex flex-col gap-2">
+        <div
+          className="absolute right-6 z-10 flex flex-col gap-2"
+          style={{ bottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+        >
           <button
             type="button"
             onClick={handleResetView}
@@ -1032,9 +1044,10 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
 
       {toast && (
         <div
-          className={`fixed bottom-6 right-6 z-50 rounded-lg px-4 py-3 text-sm text-white shadow-lg ${
+          className={`fixed right-6 z-50 rounded-lg px-4 py-3 text-sm text-white shadow-lg ${
             toast.type === 'success' ? 'bg-brand-green' : 'bg-red-600'
           }`}
+          style={{ bottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
         >
           {toast.msg}
         </div>

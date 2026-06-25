@@ -428,8 +428,8 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
 
         <div
           ref={searchContainerRef}
-          className="absolute top-4 left-1/2 -translate-x-1/2 z-10"
-          style={{ width: 'min(360px, 90vw)' }}
+          className="absolute left-1/2 -translate-x-1/2 z-10"
+          style={{ width: 'min(360px, 90vw)', top: 'max(1rem, env(safe-area-inset-top))' }}
         >
           <input
             type="text"
@@ -470,11 +470,17 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
           )}
         </div>
 
-        <div className="absolute bottom-6 left-6 z-10">
+        <div
+          className="absolute left-6 z-10"
+          style={{ bottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+        >
           <MapLeyenda capasVisibles={capasVisibles} onToggle={handleToggleCapa} />
         </div>
 
-        <div className="absolute bottom-6 right-6 z-10 flex flex-col gap-2">
+        <div
+          className="absolute right-6 z-10 flex flex-col gap-2"
+          style={{ bottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+        >
           <button
             type="button"
             onClick={handleToggleVista3D}
