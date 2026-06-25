@@ -70,8 +70,6 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
   const [mostrarDropdown, setMostrarDropdown] = useState(false)
   const searchContainerRef = useRef<HTMLDivElement>(null)
   const popupRef = useRef<maplibregl.Popup | null>(null)
-  const [planoOpacity, setPlanoOpacity] = useState(0.6)
-  const [planoCargado, setPlanoCargado] = useState(false)
   const [vista3D, setVista3D] = useState(false)
   const [capasVisibles, setCapasVisibles] = useState<Record<string, boolean>>({
     pabellon: true,
@@ -113,40 +111,6 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
       Object.entries(TODOS_LOS_ICONOS).forEach(([id, emoji]) => {
         registrarIconoZona(map, id, emoji)
       })
-
-      const planoImagenUrl = evento.metadata?.plano_imagen_url
-      const corners = evento.metadata?.imagen_corners
-
-      const coordinates: [
-        [number, number],
-        [number, number],
-        [number, number],
-        [number, number],
-      ] | null = corners
-        ? corners
-        : bounds
-          ? [
-              [bounds[0], bounds[3]],
-              [bounds[2], bounds[3]],
-              [bounds[2], bounds[1]],
-              [bounds[0], bounds[1]],
-            ]
-          : null
-
-      if (planoImagenUrl && coordinates) {
-        map.addSource('plano-source', {
-          type: 'image',
-          url: planoImagenUrl,
-          coordinates,
-        })
-        map.addLayer({
-          id: 'plano-layer',
-          type: 'raster',
-          source: 'plano-source',
-          paint: { 'raster-opacity': planoOpacity },
-        })
-        setPlanoCargado(true)
-      }
 
       setMapLoaded(true)
     })
@@ -505,27 +469,6 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
             </div>
           )}
         </div>
-
-        {planoCargado && (
-          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 rounded-full bg-white px-3 py-1.5 shadow-md">
-            <span className="text-xs text-gray-500">Plano</span>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={planoOpacity}
-              onChange={(e) => {
-                const v = parseFloat(e.target.value)
-                setPlanoOpacity(v)
-                if (mapRef.current?.getLayer('plano-layer')) {
-                  mapRef.current.setPaintProperty('plano-layer', 'raster-opacity', v)
-                }
-              }}
-              style={{ width: 100 }}
-            />
-          </div>
-        )}
 
         <div className="absolute bottom-6 left-6 z-10">
           <MapLeyenda capasVisibles={capasVisibles} onToggle={handleToggleCapa} />
