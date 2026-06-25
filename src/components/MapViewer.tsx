@@ -50,7 +50,7 @@ function zonasToGeoJSON(zonas: Zona[]): GeoJSON.FeatureCollection {
         slug: zona.slug,
         nombre: zona.nombre,
         tipo: zona.tipo,
-        icono: zona.icono || getIconoZona(zona.tipo),
+        icono: getIconoZona(zona.tipo),
         color_fill: zona.color_fill ?? colores.fill,
         color_stroke: zona.color_stroke ?? colores.stroke,
       },
@@ -480,7 +480,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
                   className="w-full flex items-center justify-between px-4 py-2 text-left text-sm hover:bg-gray-50"
                 >
                   <span>
-                    {zona.icono || getIconoZona(zona.tipo)} {zona.nombre}
+                    {getIconoZona(zona.tipo)} {zona.nombre}
                   </span>
                   <span
                     className="text-xs px-2 py-0.5 rounded-full"
@@ -620,7 +620,7 @@ function PanelInfo({ zona, onClose }: { zona: Zona; onClose: () => void }) {
           className="inline-block text-xs px-2 py-0.5 rounded-full mb-2"
           style={{ backgroundColor: colores.fill, color: colores.stroke }}
         >
-          {zona.icono || getIconoZona(zona.tipo)} {zona.tipo}
+          {getIconoZona(zona.tipo)} {zona.tipo}
         </span>
 
         <h2 className="text-lg font-medium text-brand-dark mb-2">{zona.nombre}</h2>

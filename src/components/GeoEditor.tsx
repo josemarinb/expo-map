@@ -65,7 +65,7 @@ function zonasExistentesGeoJSON(zonas: Zona[]): GeoJSON.FeatureCollection {
       properties: {
         slug: zona.slug,
         nombre: zona.nombre,
-        icono: zona.icono || getIconoZona(zona.tipo),
+        icono: getIconoZona(zona.tipo),
       },
     })
   }
@@ -738,7 +738,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
             >
               <div>
                 <p className="text-sm font-medium text-brand-dark">
-                  {zona.icono || getIconoZona(zona.tipo)} {zona.nombre}
+                  {getIconoZona(zona.tipo)} {zona.nombre}
                 </p>
                 <span
                   className="inline-block text-[10px] px-1.5 py-0.5 rounded-full mt-1"
