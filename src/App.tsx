@@ -6,7 +6,7 @@ import GeoEditorPage from './pages/GeoEditorPage'
 
 function AdminPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="h-dvh flex items-center justify-center">
       <p className="text-gray-500">Admin — próxima fase</p>
     </div>
   )
@@ -14,7 +14,7 @@ function AdminPage() {
 
 function NotFoundPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="h-dvh flex items-center justify-center">
       <div className="text-center">
         <p className="text-4xl font-medium text-gray-300 mb-3">404</p>
         <p className="text-gray-500">Página no encontrada</p>

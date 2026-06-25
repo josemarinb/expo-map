@@ -83,7 +83,7 @@ export default function HomePage() {
   const [eventoQR, setEventoQR] = useState<Evento | null>(null)
 
   return (
-    <div className="min-h-screen bg-brand-cream">
+    <div className="h-dvh overflow-y-auto bg-brand-cream">
       <header className="text-center pt-10 pb-6">
         <p className="text-xl font-semibold text-brand-dark">MapasExp</p>
         <p className="text-sm text-brand-gold">Navegación inteligente para eventos</p>
