@@ -85,7 +85,6 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
   useEffect(() => {
     if (!mapContainerRef.current) return
 
-    const bounds = evento.metadata?.plano_bounds
     const centro = evento.metadata?.centro
 
     const map = new maplibregl.Map({
@@ -94,19 +93,23 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
       center: centro ?? CENTRO_DEFAULT,
       zoom: evento.metadata?.zoom_inicial ?? 15,
       attributionControl: false,
+      maxBounds: [
+        [-57.542, -25.236],
+        [-57.521, -25.224],
+      ],
+      minZoom: 14.5,
+      maxZoom: 20,
     })
 
     map.addControl(new maplibregl.AttributionControl(), 'bottom-right')
 
-    if (bounds && bounds.length === 4) {
-      map.fitBounds(
-        [
-          [bounds[0], bounds[1]],
-          [bounds[2], bounds[3]],
-        ],
-        { padding: 40, animate: false }
-      )
-    }
+    map.fitBounds(
+      [
+        [-57.5366, -25.2329],
+        [-57.526, -25.2278],
+      ],
+      { padding: 40, animate: false }
+    )
 
     map.on('load', () => {
       Object.entries(TODOS_LOS_ICONOS).forEach(([id, emoji]) => {
