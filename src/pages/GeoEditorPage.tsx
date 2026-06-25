@@ -8,7 +8,7 @@ export default function GeoEditorPage() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center">
+      <div className="h-dvh flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-gray-200 border-t-brand-green rounded-full animate-spin" />
       </div>
     )
@@ -16,7 +16,7 @@ export default function GeoEditorPage() {
 
   if (!evento) {
     return (
-      <div className="h-screen flex items-center justify-center">
+      <div className="h-dvh flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-500 mb-4">Evento no encontrado</p>
           <Link to="/" className="text-brand-green text-sm">
@@ -28,7 +28,7 @@ export default function GeoEditorPage() {
   }
 
   return (
-    <div className="h-screen overflow-hidden">
+    <div className="h-dvh overflow-hidden">
       <GeoEditor evento={evento} />
     </div>
   )

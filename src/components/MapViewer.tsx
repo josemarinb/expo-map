@@ -422,9 +422,9 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
   }
 
   return (
-    <div className="flex h-screen w-full">
+    <div className="flex h-dvh w-full">
       <div className="relative flex-1">
-        <div ref={mapContainerRef} className="h-screen w-full" />
+        <div ref={mapContainerRef} className="h-dvh w-full" />
 
         <div
           ref={searchContainerRef}
@@ -535,7 +535,7 @@ function PanelInfo({ zona, onClose }: { zona: Zona; onClose: () => void }) {
   const colores = getColorZona(zona.tipo)
 
   return (
-    <div className="w-[280px] h-screen bg-white border-l border-gray-200 z-20 overflow-y-auto">
+    <div className="w-[280px] h-dvh bg-white border-l border-gray-200 z-20 overflow-y-auto">
       <div className="relative">
         {zona.foto_url ? (
           <img

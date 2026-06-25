@@ -718,7 +718,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
   }
 
   return (
-    <div className="flex h-screen w-full">
+    <div className="flex h-dvh w-full">
       <div className="w-[300px] flex-shrink-0 overflow-y-auto border-r border-gray-200 bg-white flex flex-col">
         <div className="p-4 border-b border-gray-200 bg-brand-dark">
           <h1 className="text-lg font-semibold text-white">GeoEditor</h1>
@@ -928,7 +928,7 @@ export default function GeoEditor({ evento }: GeoEditorProps) {
       </div>
 
       <div className="relative flex-1">
-        <div ref={mapContainerRef} className="h-screen w-full" />
+        <div ref={mapContainerRef} className="h-dvh w-full" />
 
         <div className="absolute top-4 right-4 z-10 flex gap-2">
           <button

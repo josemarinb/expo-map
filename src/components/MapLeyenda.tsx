@@ -18,7 +18,7 @@ const NOMBRES_TIPO: Record<ZonaTipo, string> = {
 }
 
 export default function MapLeyenda({ capasVisibles, onToggle }: MapLeyendaProps) {
-  const [abierta, setAbierta] = useState(false)
+  const [abierta, setAbierta] = useState(true)
   const tipos = Object.keys(ZONA_COLORES) as ZonaTipo[]
 
   if (!abierta) {
