@@ -97,7 +97,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
         [-57.542, -25.236],
         [-57.521, -25.224],
       ],
-      minZoom: 14.5,
+      minZoom: window.innerWidth < 768 ? 13.5 : 14.5,
       maxZoom: 20,
     })
 
