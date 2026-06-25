@@ -474,53 +474,56 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
           <MapLeyenda capasVisibles={capasVisibles} onToggle={handleToggleCapa} />
         </div>
 
-        <button
-          type="button"
-          onClick={handleToggleVista3D}
-          className={`absolute top-4 right-4 z-10 rounded-full px-3 py-2 text-xs font-medium shadow-md ${
-            vista3D ? 'bg-brand-green text-white' : 'bg-white text-brand-dark'
-          }`}
-        >
-          Vista 3D
-        </button>
-
-        <button
-          type="button"
-          onClick={handleResetView}
-          className="absolute bottom-20 right-6 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-md"
-          aria-label="Restablecer vista"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            className="h-5 w-5 text-brand-dark"
+        <div className="absolute bottom-6 right-6 z-10 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={handleToggleVista3D}
+            className={`flex h-11 w-11 items-center justify-center rounded-full text-xs font-semibold shadow-md ${
+              vista3D ? 'bg-brand-green text-white' : 'bg-white text-brand-dark'
+            }`}
+            aria-label="Vista 3D"
           >
-            <path d="M3 9l9-6 9 6" />
-            <path d="M5 10v9a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1v-9" />
-          </svg>
-        </button>
+            3D
+          </button>
 
-        <button
-          type="button"
-          onClick={handleGPS}
-          className="absolute bottom-6 right-6 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-md"
-          aria-label="Mi ubicación"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            className="h-5 w-5 text-brand-dark"
+          <button
+            type="button"
+            onClick={handleResetView}
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-md"
+            aria-label="Restablecer vista"
           >
-            <circle cx="12" cy="12" r="3" />
-            <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-          </svg>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              className="h-5 w-5 text-brand-dark"
+            >
+              <path d="M3 9l9-6 9 6" />
+              <path d="M5 10v9a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1v-9" />
+            </svg>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleGPS}
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-md"
+            aria-label="Mi ubicación"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              className="h-5 w-5 text-brand-dark"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {zonaSeleccionada && <PanelInfo zona={zonaSeleccionada} onClose={cerrarPanel} />}
