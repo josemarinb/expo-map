@@ -35,7 +35,7 @@ export default function MapLeyenda({ capasVisibles, onToggle }: MapLeyendaProps)
   }
 
   return (
-    <div className="w-[160px] max-h-[55vh] overflow-y-auto rounded-lg bg-white p-3 shadow-md">
+    <div className="w-[180px] max-h-[55vh] overflow-y-auto rounded-lg bg-white p-3 shadow-md">
       <button
         type="button"
         onClick={() => setAbierta(false)}
@@ -59,7 +59,7 @@ export default function MapLeyenda({ capasVisibles, onToggle }: MapLeyendaProps)
               style={{ backgroundColor: ZONA_COLORES[tipo].stroke }}
             />
             <span
-              className="text-xs text-brand-dark"
+              className="text-[10px] leading-tight text-brand-dark whitespace-nowrap"
               style={{ opacity: visible ? 1 : 0.4 }}
             >
               {ZONA_ICONOS[tipo]} {NOMBRES_TIPO[tipo]}
