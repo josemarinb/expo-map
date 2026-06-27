@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ZONA_COLORES, ZONA_ICONOS } from '../types/map'
 import type { ZonaTipo } from '../types/map'
 
 interface MapLeyendaProps {
   capasVisibles: Record<string, boolean>
   onToggle: (tipo: string) => void
+  cerrarCuando?: boolean
 }
 
 const NOMBRES_TIPO: Record<ZonaTipo, string> = {
@@ -18,9 +19,16 @@ const NOMBRES_TIPO: Record<ZonaTipo, string> = {
   otro: 'Otros',
 }
 
-export default function MapLeyenda({ capasVisibles, onToggle }: MapLeyendaProps) {
+export default function MapLeyenda({ capasVisibles, onToggle, cerrarCuando }: MapLeyendaProps) {
   const [abierta, setAbierta] = useState(true)
   const tipos = Object.keys(ZONA_COLORES) as ZonaTipo[]
+
+  useEffect(() => {
+    if (cerrarCuando) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reacciona a un cambio de estado externo (panel abierto)
+      setAbierta(false)
+    }
+  }, [cerrarCuando])
 
   if (!abierta) {
     return (

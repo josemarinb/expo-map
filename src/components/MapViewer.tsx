@@ -572,7 +572,11 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
           className="absolute left-6 z-10"
           style={{ bottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
         >
-          <MapLeyenda capasVisibles={capasVisibles} onToggle={handleToggleCapa} />
+          <MapLeyenda
+            capasVisibles={capasVisibles}
+            onToggle={handleToggleCapa}
+            cerrarCuando={panelAbierto}
+          />
         </div>
 
         <div
@@ -581,7 +585,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
           }`}
           style={{
             bottom: botonesSobrePanel
-              ? `calc(${panelExpandido ? '70vh' : '220px'} + 0.75rem)`
+              ? `calc(${panelExpandido ? '70vh' : '220px'} + 0.4rem)`
               : 'max(1.5rem, env(safe-area-inset-bottom))',
           }}
         >
