@@ -7,6 +7,28 @@ interface RouteLayerProps {
   route: RouteResult | null
 }
 
+// Secuencia fija de patrones de guiones ("hormiga marchando"). Animar
+// line-dasharray con un valor fraccionario distinto en cada frame fuerza a
+// MapLibre a regenerar la textura del patrón constantemente, lo que se ve
+// como parpadeo. Ciclar entre un set pequeño y fijo de arrays (la técnica
+// del ejemplo oficial de Mapbox) evita eso.
+const SECUENCIA_GUIONES: number[][] = [
+  [0, 4, 3],
+  [0.5, 4, 2.5],
+  [1, 4, 2],
+  [1.5, 4, 1.5],
+  [2, 4, 1],
+  [2.5, 4, 0.5],
+  [3, 4, 0],
+  [0, 0.5, 3, 3.5],
+  [0, 1, 3, 3],
+  [0, 1.5, 3, 2.5],
+  [0, 2, 3, 2],
+  [0, 2.5, 3, 1.5],
+  [0, 3, 3, 1],
+  [0, 3.5, 3, 0.5],
+]
+
 export default function RouteLayer({ map, route }: RouteLayerProps) {
   const rafRef = useRef<number | null>(null)
   const markerRef = useRef<maplibregl.Marker | null>(null)
@@ -42,10 +64,12 @@ export default function RouteLayer({ map, route }: RouteLayerProps) {
         .setLngLat(destino)
         .addTo(map)
 
+      let pasoActual = -1
       const animate = (t: number) => {
-        const offset = (t / 100) % 10
-        if (map.getLayer('route-fg')) {
-          map.setPaintProperty('route-fg', 'line-dasharray', [2, offset])
+        const paso = Math.floor((t / 50) % SECUENCIA_GUIONES.length)
+        if (paso !== pasoActual && map.getLayer('route-fg')) {
+          map.setPaintProperty('route-fg', 'line-dasharray', SECUENCIA_GUIONES[paso])
+          pasoActual = paso
         }
         rafRef.current = requestAnimationFrame(animate)
       }

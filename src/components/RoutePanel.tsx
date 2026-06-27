@@ -1,4 +1,5 @@
 import type { RouteResult } from '../lib/routing'
+import { PANEL_CLASES } from './panelStyles'
 
 interface RoutePanelProps {
   route: RouteResult
@@ -14,7 +15,11 @@ export default function RoutePanel({ route, onClose }: RoutePanelProps) {
   const pasos = route.steps.filter((paso) => paso.distanceM > 0).slice(0, 6)
 
   return (
-    <div className="w-[280px] h-dvh bg-white border-l border-gray-200 z-20 overflow-y-auto flex flex-col">
+    <div className={PANEL_CLASES}>
+      <div className="flex justify-center pt-2 pb-1 md:hidden">
+        <div className="h-1.5 w-10 rounded-full bg-gray-300" />
+      </div>
+
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <div className="flex items-center gap-2">
           <svg

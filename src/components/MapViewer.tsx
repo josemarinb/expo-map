@@ -9,6 +9,7 @@ import type { RouteResult } from '../lib/routing'
 import MapLeyenda from './MapLeyenda'
 import RouteLayer from './RouteLayer'
 import RoutePanel from './RoutePanel'
+import { PANEL_CLASES } from './panelStyles'
 
 interface MapViewerProps {
   evento: Evento
@@ -640,80 +641,89 @@ function PanelInfo({
   const colores = getColorZona(zona.tipo)
 
   return (
-    <div className="w-[280px] h-dvh bg-white border-l border-gray-200 z-20 overflow-y-auto">
-      <div className="relative">
-        {zona.foto_url ? (
-          <img
-            src={zona.foto_url}
-            alt={zona.nombre}
-            className="w-full h-[160px] object-cover"
-          />
-        ) : (
-          <div className="w-full h-[160px] bg-gray-100 flex items-center justify-center">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              className="h-10 w-10 text-gray-300"
-            >
-              <rect x="3" y="5" width="18" height="14" rx="2" />
-              <circle cx="9" cy="11" r="2" />
-              <path d="M21 16l-5-5-9 9" />
-            </svg>
-          </div>
-        )}
-
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white shadow"
-          aria-label="Cerrar"
-        >
-          ✕
-        </button>
+    <div className={PANEL_CLASES}>
+      <div className="flex justify-center pt-2 pb-1 md:hidden">
+        <div className="h-1.5 w-10 rounded-full bg-gray-300" />
       </div>
 
-      <div className="p-4">
-        <span
-          className="inline-block text-xs px-2 py-0.5 rounded-full mb-2"
-          style={{ backgroundColor: colores.fill, color: colores.stroke }}
-        >
-          {getIconoZona(zona.tipo)} {zona.tipo}
-        </span>
+      <div
+        className="flex-1 overflow-y-auto"
+        style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}
+      >
+        <div className="relative">
+          {zona.foto_url ? (
+            <img
+              src={zona.foto_url}
+              alt={zona.nombre}
+              className="w-full h-[160px] object-cover"
+            />
+          ) : (
+            <div className="w-full h-[160px] bg-gray-100 flex items-center justify-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.5}
+                className="h-10 w-10 text-gray-300"
+              >
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <circle cx="9" cy="11" r="2" />
+                <path d="M21 16l-5-5-9 9" />
+              </svg>
+            </div>
+          )}
 
-        <h2 className="text-lg font-medium text-brand-dark mb-2">{zona.nombre}</h2>
-
-        {zona.descripcion && (
-          <p className="text-sm text-gray-500 mb-3">{zona.descripcion}</p>
-        )}
-
-        {zona.horario_apertura && (
-          <p className="text-sm text-gray-600 mb-1">
-            Horario: {zona.horario_apertura} – {zona.horario_cierre}
-          </p>
-        )}
-
-        {zona.capacidad_vehiculos !== null && (
-          <p className="text-sm text-gray-600 mb-3">
-            Capacidad: {zona.capacidad_vehiculos} vehículos
-          </p>
-        )}
-
-        {cargandoRuta ? (
-          <div className="mt-2 flex w-full items-center justify-center rounded-lg border border-brand-green py-2">
-            <div className="h-4 w-4 rounded-full border-2 border-brand-green/30 border-t-brand-green animate-spin" />
-          </div>
-        ) : (
           <button
             type="button"
-            onClick={onComoLlegar}
-            className="mt-2 w-full border border-brand-green text-brand-green rounded-lg py-2 text-sm hover:bg-brand-green/5"
+            onClick={onClose}
+            className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white shadow"
+            aria-label="Cerrar"
           >
-            Cómo llegar
+            ✕
           </button>
-        )}
+        </div>
+
+        <div className="p-4">
+          <span
+            className="inline-block text-xs px-2 py-0.5 rounded-full mb-2"
+            style={{ backgroundColor: colores.fill, color: colores.stroke }}
+          >
+            {getIconoZona(zona.tipo)} {zona.tipo}
+          </span>
+
+          <h2 className="text-lg font-medium text-brand-dark mb-2">{zona.nombre}</h2>
+
+          {zona.descripcion && (
+            <p className="text-sm text-gray-500 mb-3">{zona.descripcion}</p>
+          )}
+
+          {zona.horario_apertura && (
+            <p className="text-sm text-gray-600 mb-1">
+              Horario: {zona.horario_apertura} – {zona.horario_cierre}
+            </p>
+          )}
+
+          {zona.capacidad_vehiculos !== null && (
+            <p className="text-sm text-gray-600 mb-3">
+              Capacidad: {zona.capacidad_vehiculos} vehículos
+            </p>
+          )}
+
+          {cargandoRuta ? (
+            <div className="mt-2 flex w-full items-center justify-center rounded-lg border border-brand-green py-2">
+              <div className="h-4 w-4 rounded-full border-2 border-brand-green/30 border-t-brand-green animate-spin" />
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onComoLlegar}
+              className="mt-2 w-full border border-brand-green text-brand-green rounded-lg py-2 text-sm hover:bg-brand-green/5"
+            >
+              Cómo llegar
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
