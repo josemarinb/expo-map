@@ -1,3 +1,4 @@
+import type { Ref } from 'react'
 import type { RouteResult } from '../lib/routing'
 import { panelClases } from './panelStyles'
 
@@ -6,6 +7,7 @@ interface RoutePanelProps {
   expandido: boolean
   onToggleExpandido: () => void
   onCancelar: () => void
+  containerRef?: Ref<HTMLDivElement>
 }
 
 export default function RoutePanel({
@@ -13,6 +15,7 @@ export default function RoutePanel({
   expandido,
   onToggleExpandido,
   onCancelar,
+  containerRef,
 }: RoutePanelProps) {
   const distanciaTexto =
     route.distanceM < 500
@@ -26,7 +29,7 @@ export default function RoutePanel({
   const mostrarDetalle = 'md:flex ' + (expandido ? 'flex' : 'hidden')
 
   return (
-    <div className={panelClases(expandido)}>
+    <div ref={containerRef} className={panelClases(expandido)}>
       <button
         type="button"
         onClick={onToggleExpandido}

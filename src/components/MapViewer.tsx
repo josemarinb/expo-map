@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import type { Ref } from 'react'
 import maplibregl from 'maplibre-gl'
 import type { Evento, Zona } from '../types/map'
 import { getColorZona, getIconoZona, getIconoIdZona, TODOS_LOS_ICONOS } from '../types/map'
@@ -81,6 +82,8 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
   const [routeLoading, setRouteLoading] = useState(false)
   const [panelExpandido, setPanelExpandido] = useState(false)
   const [esMobile, setEsMobile] = useState(false)
+  const [panelAlturaPx, setPanelAlturaPx] = useState(0)
+  const panelRef = useRef<HTMLDivElement>(null)
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null)
   const [capasVisibles, setCapasVisibles] = useState<Record<string, boolean>>({
     pabellon: true,
@@ -319,6 +322,29 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
     mq.addEventListener('change', actualizar)
     return () => mq.removeEventListener('change', actualizar)
   }, [])
+
+  // Mide la altura REAL del panel (varía según el contenido: descripción,
+  // cantidad de pasos, colapsado/expandido) para poder pegar los botones
+  // flotantes justo arriba, en vez de adivinar un alto fijo.
+  useEffect(() => {
+    const panelAbiertoAhora = Boolean(route || zonaSeleccionada)
+    if (!panelAbiertoAhora) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reacciona a que el panel se cerró
+      setPanelAlturaPx(0)
+      return
+    }
+
+    const el = panelRef.current
+    if (!el) return
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (entry) setPanelAlturaPx(entry.borderBoxSize?.[0]?.blockSize ?? entry.contentRect.height)
+    })
+    observer.observe(el)
+
+    return () => observer.disconnect()
+  }, [route, zonaSeleccionada])
 
   function cerrarPanel() {
     setZonaSeleccionada(null)
@@ -585,7 +611,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
           }`}
           style={{
             bottom: botonesSobrePanel
-              ? `calc(${panelExpandido ? '70vh' : '220px'} + 0.4rem)`
+              ? `calc(${panelAlturaPx}px + 0.4rem)`
               : 'max(1.5rem, env(safe-area-inset-bottom))',
           }}
         >
@@ -644,6 +670,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
 
       {route ? (
         <RoutePanel
+          containerRef={panelRef}
           route={route}
           expandido={panelExpandido}
           onToggleExpandido={() => setPanelExpandido((v) => !v)}
@@ -652,6 +679,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
       ) : (
         zonaSeleccionada && (
           <PanelInfo
+            containerRef={panelRef}
             zona={zonaSeleccionada}
             expandido={panelExpandido}
             onToggleExpandido={() => setPanelExpandido((v) => !v)}
@@ -672,6 +700,7 @@ function PanelInfo({
   onClose,
   onComoLlegar,
   cargandoRuta,
+  containerRef,
 }: {
   zona: Zona
   expandido: boolean
@@ -679,6 +708,7 @@ function PanelInfo({
   onClose: () => void
   onComoLlegar: () => void
   cargandoRuta: boolean
+  containerRef?: Ref<HTMLDivElement>
 }) {
   const colores = getColorZona(zona.tipo)
 
@@ -688,7 +718,7 @@ function PanelInfo({
   const mostrarDetalle = 'md:block ' + (expandido ? 'block' : 'hidden')
 
   return (
-    <div className={panelClases(expandido)}>
+    <div ref={containerRef} className={panelClases(expandido)}>
       <button
         type="button"
         onClick={onToggleExpandido}
