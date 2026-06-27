@@ -80,6 +80,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
   const [route, setRoute] = useState<RouteResult | null>(null)
   const [routeLoading, setRouteLoading] = useState(false)
   const [panelExpandido, setPanelExpandido] = useState(false)
+  const [esMobile, setEsMobile] = useState(false)
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null)
   const [capasVisibles, setCapasVisibles] = useState<Record<string, boolean>>({
     pabellon: true,
@@ -311,6 +312,14 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
     }
   }, [])
 
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const actualizar = () => setEsMobile(mq.matches)
+    actualizar()
+    mq.addEventListener('change', actualizar)
+    return () => mq.removeEventListener('change', actualizar)
+  }, [])
+
   function cerrarPanel() {
     setZonaSeleccionada(null)
     setPanelExpandido(false)
@@ -474,6 +483,9 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
     )
   }
 
+  const panelAbierto = Boolean(route || zonaSeleccionada)
+  const botonesSobrePanel = esMobile && panelAbierto
+
   const resultados =
     busqueda.length >= 2
       ? zonas
@@ -564,8 +576,14 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
         </div>
 
         <div
-          className="absolute right-6 z-10 flex flex-col gap-2"
-          style={{ bottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+          className={`absolute right-6 z-10 flex gap-2 ${
+            botonesSobrePanel ? 'flex-row' : 'flex-col'
+          }`}
+          style={{
+            bottom: botonesSobrePanel
+              ? `calc(${panelExpandido ? '70vh' : '220px'} + 0.75rem)`
+              : 'max(1.5rem, env(safe-area-inset-bottom))',
+          }}
         >
           <button
             type="button"
