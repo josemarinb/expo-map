@@ -296,17 +296,23 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
     }
 
     map.on('click', 'zonas-fill', onClickZona)
+    map.on('click', 'zonas-fill-3d', onClickZona)
     map.on('click', 'zonas-point', onClickZona)
     map.on('mouseenter', 'zonas-fill', onEnter)
     map.on('mouseleave', 'zonas-fill', onLeave)
+    map.on('mouseenter', 'zonas-fill-3d', onEnter)
+    map.on('mouseleave', 'zonas-fill-3d', onLeave)
     map.on('mouseenter', 'zonas-point', onEnter)
     map.on('mouseleave', 'zonas-point', onLeave)
 
     return () => {
       map.off('click', 'zonas-fill', onClickZona)
+      map.off('click', 'zonas-fill-3d', onClickZona)
       map.off('click', 'zonas-point', onClickZona)
       map.off('mouseenter', 'zonas-fill', onEnter)
       map.off('mouseleave', 'zonas-fill', onLeave)
+      map.off('mouseenter', 'zonas-fill-3d', onEnter)
+      map.off('mouseleave', 'zonas-fill-3d', onLeave)
       map.off('mouseenter', 'zonas-point', onEnter)
       map.off('mouseleave', 'zonas-point', onLeave)
     }
