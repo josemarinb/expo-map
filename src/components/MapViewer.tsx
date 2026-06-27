@@ -9,7 +9,7 @@ import type { RouteResult } from '../lib/routing'
 import MapLeyenda from './MapLeyenda'
 import RouteLayer from './RouteLayer'
 import RoutePanel from './RoutePanel'
-import { PANEL_CLASES } from './panelStyles'
+import { panelClases } from './panelStyles'
 
 interface MapViewerProps {
   evento: Evento
@@ -79,6 +79,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
   const [vista3D, setVista3D] = useState(false)
   const [route, setRoute] = useState<RouteResult | null>(null)
   const [routeLoading, setRouteLoading] = useState(false)
+  const [panelExpandido, setPanelExpandido] = useState(false)
   const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null)
   const [capasVisibles, setCapasVisibles] = useState<Record<string, boolean>>({
     pabellon: true,
@@ -252,6 +253,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
       if (!zona) return
 
       setZonaSeleccionada(zona)
+      setPanelExpandido(false)
 
       popupRef.current?.remove()
       popupRef.current = new maplibregl.Popup({
@@ -311,6 +313,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
 
   function cerrarPanel() {
     setZonaSeleccionada(null)
+    setPanelExpandido(false)
     popupRef.current?.remove()
     popupRef.current = null
   }
@@ -395,6 +398,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
 
         setRoute(result)
         setZonaSeleccionada(null)
+        setPanelExpandido(false)
 
         const map = mapRef.current
         if (map && result.geojson.coordinates.length) {
@@ -411,6 +415,11 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
       },
       () => alert('Activá la ubicación para usar esta función')
     )
+  }
+
+  function handleCancelarRuta() {
+    setRoute(null)
+    setPanelExpandido(false)
   }
 
   function handleGPS() {
@@ -612,11 +621,18 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
       </div>
 
       {route ? (
-        <RoutePanel route={route} onClose={() => setRoute(null)} />
+        <RoutePanel
+          route={route}
+          expandido={panelExpandido}
+          onToggleExpandido={() => setPanelExpandido((v) => !v)}
+          onCancelar={handleCancelarRuta}
+        />
       ) : (
         zonaSeleccionada && (
           <PanelInfo
             zona={zonaSeleccionada}
+            expandido={panelExpandido}
+            onToggleExpandido={() => setPanelExpandido((v) => !v)}
             onClose={cerrarPanel}
             onComoLlegar={handleComoLlegar}
             cargandoRuta={routeLoading}
@@ -629,71 +645,87 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
 
 function PanelInfo({
   zona,
+  expandido,
+  onToggleExpandido,
   onClose,
   onComoLlegar,
   cargandoRuta,
 }: {
   zona: Zona
+  expandido: boolean
+  onToggleExpandido: () => void
   onClose: () => void
   onComoLlegar: () => void
   cargandoRuta: boolean
 }) {
   const colores = getColorZona(zona.tipo)
 
+  // En desktop el panel siempre muestra todo (es un sidebar fijo, no tapa
+  // nada). En mobile, la foto/descripción/horario solo se ven si está
+  // expandido — colapsado deja ver el mapa.
+  const mostrarDetalle = 'md:block ' + (expandido ? 'block' : 'hidden')
+
   return (
-    <div className={PANEL_CLASES}>
-      <div className="flex justify-center pt-2 pb-1 md:hidden">
-        <div className="h-1.5 w-10 rounded-full bg-gray-300" />
-      </div>
-
-      <div
-        className="flex-1 overflow-y-auto"
-        style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}
+    <div className={panelClases(expandido)}>
+      <button
+        type="button"
+        onClick={onToggleExpandido}
+        className="flex w-full justify-center pt-2 pb-1 md:hidden"
+        aria-label={expandido ? 'Minimizar' : 'Ver detalle'}
       >
-        <div className="relative">
-          {zona.foto_url ? (
-            <img
-              src={zona.foto_url}
-              alt={zona.nombre}
-              className="w-full h-[160px] object-cover"
-            />
-          ) : (
-            <div className="w-full h-[160px] bg-gray-100 flex items-center justify-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.5}
-                className="h-10 w-10 text-gray-300"
-              >
-                <rect x="3" y="5" width="18" height="14" rx="2" />
-                <circle cx="9" cy="11" r="2" />
-                <path d="M21 16l-5-5-9 9" />
-              </svg>
-            </div>
-          )}
+        <div className="h-1.5 w-10 rounded-full bg-gray-300" />
+      </button>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-white shadow"
-            aria-label="Cerrar"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="p-4">
+      <div className="flex items-start justify-between gap-2 px-4 pt-1 pb-2 md:pt-4">
+        <div>
           <span
-            className="inline-block text-xs px-2 py-0.5 rounded-full mb-2"
+            className="inline-block text-xs px-2 py-0.5 rounded-full mb-1"
             style={{ backgroundColor: colores.fill, color: colores.stroke }}
           >
             {getIconoZona(zona.tipo)} {zona.tipo}
           </span>
+          <h2 className="text-lg font-medium text-brand-dark">{zona.nombre}</h2>
+        </div>
 
-          <h2 className="text-lg font-medium text-brand-dark mb-2">{zona.nombre}</h2>
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100"
+          aria-label="Cerrar"
+        >
+          ✕
+        </button>
+      </div>
 
+      <div className="px-4 pb-3">
+        {cargandoRuta ? (
+          <div className="flex w-full items-center justify-center rounded-lg border border-brand-green py-2">
+            <div className="h-4 w-4 rounded-full border-2 border-brand-green/30 border-t-brand-green animate-spin" />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onComoLlegar}
+            className="w-full border border-brand-green text-brand-green rounded-lg py-2 text-sm hover:bg-brand-green/5"
+          >
+            Cómo llegar
+          </button>
+        )}
+      </div>
+
+      <div className={`${mostrarDetalle} flex-1 overflow-y-auto`}>
+        {zona.foto_url && (
+          <img
+            src={zona.foto_url}
+            alt={zona.nombre}
+            className="w-full h-[140px] object-cover"
+          />
+        )}
+
+        <div
+          className="px-4 py-3"
+          style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+        >
           {zona.descripcion && (
             <p className="text-sm text-gray-500 mb-3">{zona.descripcion}</p>
           )}
@@ -705,23 +737,9 @@ function PanelInfo({
           )}
 
           {zona.capacidad_vehiculos !== null && (
-            <p className="text-sm text-gray-600 mb-3">
+            <p className="text-sm text-gray-600 mb-1">
               Capacidad: {zona.capacidad_vehiculos} vehículos
             </p>
-          )}
-
-          {cargandoRuta ? (
-            <div className="mt-2 flex w-full items-center justify-center rounded-lg border border-brand-green py-2">
-              <div className="h-4 w-4 rounded-full border-2 border-brand-green/30 border-t-brand-green animate-spin" />
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={onComoLlegar}
-              className="mt-2 w-full border border-brand-green text-brand-green rounded-lg py-2 text-sm hover:bg-brand-green/5"
-            >
-              Cómo llegar
-            </button>
           )}
         </div>
       </div>
