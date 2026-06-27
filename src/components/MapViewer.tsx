@@ -3,7 +3,12 @@ import maplibregl from 'maplibre-gl'
 import type { Evento, Zona } from '../types/map'
 import { getColorZona, getIconoZona, getIconoIdZona, TODOS_LOS_ICONOS } from '../types/map'
 import { registrarIconoZona } from '../lib/iconos'
+import { getCentroid } from '../lib/geo'
+import { getRoute } from '../lib/routing'
+import type { RouteResult } from '../lib/routing'
 import MapLeyenda from './MapLeyenda'
+import RouteLayer from './RouteLayer'
+import RoutePanel from './RoutePanel'
 
 interface MapViewerProps {
   evento: Evento
@@ -71,6 +76,9 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
   const searchContainerRef = useRef<HTMLDivElement>(null)
   const popupRef = useRef<maplibregl.Popup | null>(null)
   const [vista3D, setVista3D] = useState(false)
+  const [route, setRoute] = useState<RouteResult | null>(null)
+  const [routeLoading, setRouteLoading] = useState(false)
+  const [mapInstance, setMapInstance] = useState<maplibregl.Map | null>(null)
   const [capasVisibles, setCapasVisibles] = useState<Record<string, boolean>>({
     pabellon: true,
     salon: true,
@@ -119,10 +127,12 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
     })
 
     mapRef.current = map
+    setMapInstance(map)
 
     return () => {
       map.remove()
       mapRef.current = null
+      setMapInstance(null)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -357,6 +367,51 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
     map.easeTo({ pitch: nuevoValor ? 45 : 0, duration: 600 })
   }
 
+  function handleComoLlegar() {
+    if (!zonaSeleccionada) return
+
+    if (!navigator.geolocation) {
+      alert('Activá la ubicación para usar esta función')
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { longitude: fromLon, latitude: fromLat } = pos.coords
+
+        const geom = parseWKT(zonaSeleccionada.geom_wkt ?? '')
+        const centro = getCentroid(geom)
+        if (!centro) return
+
+        setRouteLoading(true)
+        const result = await getRoute(fromLon, fromLat, centro[0], centro[1])
+        setRouteLoading(false)
+
+        if (!result) {
+          alert('No se pudo calcular la ruta. Intentá de nuevo.')
+          return
+        }
+
+        setRoute(result)
+        setZonaSeleccionada(null)
+
+        const map = mapRef.current
+        if (map && result.geojson.coordinates.length) {
+          const lons = result.geojson.coordinates.map((c) => c[0])
+          const lats = result.geojson.coordinates.map((c) => c[1])
+          map.fitBounds(
+            [
+              [Math.min(...lons), Math.min(...lats)],
+              [Math.max(...lons), Math.max(...lats)],
+            ],
+            { padding: 60, duration: 800 }
+          )
+        }
+      },
+      () => alert('Activá la ubicación para usar esta función')
+    )
+  }
+
   function handleGPS() {
     if (!navigator.geolocation) {
       alert('No se pudo obtener tu ubicación')
@@ -551,14 +606,37 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
             </svg>
           </button>
         </div>
+
+        <RouteLayer map={mapInstance} route={route} />
       </div>
 
-      {zonaSeleccionada && <PanelInfo zona={zonaSeleccionada} onClose={cerrarPanel} />}
+      {route ? (
+        <RoutePanel route={route} onClose={() => setRoute(null)} />
+      ) : (
+        zonaSeleccionada && (
+          <PanelInfo
+            zona={zonaSeleccionada}
+            onClose={cerrarPanel}
+            onComoLlegar={handleComoLlegar}
+            cargandoRuta={routeLoading}
+          />
+        )
+      )}
     </div>
   )
 }
 
-function PanelInfo({ zona, onClose }: { zona: Zona; onClose: () => void }) {
+function PanelInfo({
+  zona,
+  onClose,
+  onComoLlegar,
+  cargandoRuta,
+}: {
+  zona: Zona
+  onClose: () => void
+  onComoLlegar: () => void
+  cargandoRuta: boolean
+}) {
   const colores = getColorZona(zona.tipo)
 
   return (
@@ -623,13 +701,19 @@ function PanelInfo({ zona, onClose }: { zona: Zona; onClose: () => void }) {
           </p>
         )}
 
-        <button
-          type="button"
-          onClick={() => console.log('Cómo llegar:', zona.nombre)}
-          className="mt-2 w-full border border-brand-green text-brand-green rounded-lg py-2 text-sm hover:bg-brand-green/5"
-        >
-          Cómo llegar
-        </button>
+        {cargandoRuta ? (
+          <div className="mt-2 flex w-full items-center justify-center rounded-lg border border-brand-green py-2">
+            <div className="h-4 w-4 rounded-full border-2 border-brand-green/30 border-t-brand-green animate-spin" />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onComoLlegar}
+            className="mt-2 w-full border border-brand-green text-brand-green rounded-lg py-2 text-sm hover:bg-brand-green/5"
+          >
+            Cómo llegar
+          </button>
+        )}
       </div>
     </div>
   )
