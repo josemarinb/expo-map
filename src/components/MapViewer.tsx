@@ -628,7 +628,7 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
           }`}
           style={{
             bottom: botonesSobrePanel
-              ? `calc(${panelAlturaPx}px + 0.4rem)`
+              ? `calc(${panelAlturaPx}px + 0.75rem)`
               : 'max(1.5rem, env(safe-area-inset-bottom))',
           }}
         >
