@@ -269,6 +269,23 @@ export default function MapViewer({ evento, zonas }: MapViewerProps) {
         .setLngLat(e.lngLat)
         .setHTML(`<span style="font-size:12px;font-weight:500">${nombre ?? zona.nombre}</span>`)
         .addTo(map)
+
+      // Mismo zoom centrado que al elegir un resultado del buscador.
+      const geometry = feature.geometry
+      let centro: [number, number] | null = null
+      if (geometry.type === 'Point') {
+        centro = geometry.coordinates as [number, number]
+      } else if (geometry.type === 'Polygon') {
+        const ring = geometry.coordinates[0] as [number, number][]
+        const lons = ring.map((c) => c[0])
+        const lats = ring.map((c) => c[1])
+        centro = [
+          (Math.min(...lons) + Math.max(...lons)) / 2,
+          (Math.min(...lats) + Math.max(...lats)) / 2,
+        ]
+      }
+
+      if (centro) map.flyTo({ center: centro, zoom: 17 })
     }
 
     const onEnter = () => {
